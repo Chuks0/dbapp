@@ -4,7 +4,7 @@
 
 - To get to the React app go to the `./hosting` directory:
 
-- From `./hosting` use the following command to run the app in **development moded**:
+- From `./hosting` use the following command to run the app in _development moded_:
 
 ```sh
 npm run dev
@@ -19,5 +19,5 @@ firebase deploy --only hosting
 ```
 
 - Application will be deployed to the following url:
-- - [PROJECT_ID].web.app
-- - [PROJECT_ID].firebaseapp.com
+- [*PROJECT_ID*].web.app
+- [*PROJECT_ID*].firebaseapp.com
