@@ -1,6 +1,6 @@
 # Firebase Hosting
 
-This project uses **Firebase Hosting** for deployment. If you don't already have [`firebase CLI`](https://firebase.google.com/docs/cli) installed you can run the following command to install the latest version:
+This project uses **Firebase Hosting** for deployment. If you don't already have `firebase CLI` installed you can run the following command to install the latest version:
 
 ```sh
 npm install -g firebase-tools
@@ -10,9 +10,9 @@ For other CLI management options, visit the [CLI documentation](https://firebase
 
 ## Development
 
-- To get to the React app go to the [`./hosting`](./hosting/) directory:
+- To get to the React app go to the `./hosting` directory:
 
-- From [`./hosting`](./hosting/) use the following command to run the app in _development moded_:
+- From `./hosting` use the following command to run the app in _development moded_:
 
 ```sh
 npm run dev
@@ -27,13 +27,14 @@ firebase deploy --only hosting
 ```
 
 - Application will be deployed to the following url:
+
   > [_PROJECT_ID_.web.app](https://quickaskserver.web.app/)
-  
+
   > [_PROJECT_ID_.firebaseapp.com](https://quickaskserver.firebaseapp.com/)
 
 ## TODO:
 
-- [x] Create readme.md
+- [x] ~Create readme.md~
 - [ ] \(Optional) Make loadbalancer
 
 ## Alerts:
