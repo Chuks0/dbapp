@@ -1,7 +1,6 @@
 # Firebase Hosting
 
-This project uses Firebase Hosting for development. If you don't already have `firebase CLI` installed
-you can run the following command to install the latest version:
+This project uses **Firebase Hosting** for deployment. If you don't already have [`firebase CLI`](https://firebase.google.com/docs/cli) installed you can run the following command to install the latest version:
 
 ```sh
 npm install -g firebase-tools
@@ -28,15 +27,15 @@ firebase deploy --only hosting
 ```
 
 - Application will be deployed to the following url:
-  > [_PROJECT_ID_.web.app](https://quickaskserver.web.app/).
-  > [_PROJECT_ID_.firebaseapp.com](https://quickaskserver.firebaseapp.com/).
+
+  > [_PROJECT_ID_.web.app](https://quickaskserver.web.app/)
+
+  > [_PROJECT_ID_.firebaseapp.com](https://quickaskserver.firebaseapp.com/)
 
 ## TODO:
 
-- [x] #739
-- [ ] https://github.com/octo-org/octo-repo/issues/740
-- [ ] Add delight to the experience when all tasks are complete :tada:
-- [ ] \(Optional) Open a followup issue
+- [x] Create readme.md
+- [ ] \(Optional) Make loadbalancer
 
 ## Alerts:
 
