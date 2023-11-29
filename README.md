@@ -12,17 +12,12 @@ npm run dev
 
 ## Deployment
 
-- Then run the app in production mode:
-
-```sh
-npm start
-```
-
 - To deploy to your site, run the following command from the root of your local project directory:
 
 ```sh
 firebase deploy --only hosting
 ```
 
--PROJECT_ID.web.app
--PROJECT_ID.firebaseapp.com
+- Application will be deployed to the following url:
+- - [PROJECT_ID].web.app
+- - [PROJECT_ID].firebaseapp.com
