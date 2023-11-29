@@ -28,6 +28,7 @@ firebase deploy --only hosting
 
 - Application will be deployed to the following url:
   > [_PROJECT_ID_.web.app](https://quickaskserver.web.app/)
+  
   > [_PROJECT_ID_.firebaseapp.com](https://quickaskserver.firebaseapp.com/)
 
 ## TODO:
