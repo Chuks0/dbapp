@@ -1,5 +1,7 @@
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
+import ota from "./assets/online-test-animate.svg";
+//<img src={ota} className="logo" alt="Vite logo" />;
 
 import "./App.css";
 import { useRef, useState } from "react";
@@ -10,6 +12,7 @@ import {
   getAuth,
   signInWithPopup,
   signInWithRedirect,
+  onAuthStateChanged,
 } from "firebase/auth";
 import {
   collection,
@@ -23,7 +26,17 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollectionData } from "react-firebase-hooks/firestore";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { render } from "react-dom";
+import {
+  motion,
+  useScroll,
+  useSpring,
+  useTransform,
+  useMotionValue,
+  useVelocity,
+  useAnimationFrame,
+} from "framer-motion";
+//import { wrap } from "@motionone/utils";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAHsUhPfPx2MhAw9yODNIJwN7zUWkpYA4w",
@@ -37,13 +50,459 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const firestore = getFirestore(app);
 
+const URL = (url) => `http://localhost:3000/${url}`;
+
+const GET = async (url = "") => {
+  const response = await fetch(url, {
+    method: "GET",
+    mode: "cors",
+    cache: "no-cache",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    redirect: "follow",
+    referrerPolicy: "no-referrer",
+  });
+  return response.json();
+};
+
+const POST = async (url = "", data = {}) => {
+  const response = await fetch(url, {
+    method: "POST",
+    mode: "cors",
+    cache: "no-cache",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    redirect: "follow",
+    referrerPolicy: "no-referrer",
+    body: JSON.stringify(data),
+  });
+  return await response.json();
+};
+
+const sighInWithGoogle = async (user) => {
+  const provider = new GoogleAuthProvider();
+  provider.addScope("profile");
+  provider.addScope("email");
+  //await signInWithRedirect(auth, provider);
+  await signInWithPopup(auth, provider);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const res = await POST(URL("users"), {
+      name: user.displayName,
+      email: user.email,
+    });
+    let list = res[0];
+    let item = list[0];
+    localStorage.setItem("Id", item.Id);
+  }
+});
+
 function App() {
   const [user] = useAuthState(auth);
   const [showChat, setShowChat] = useState(false);
+  const [nav, setNav] = useState("Home");
+
+  const [isOpen0, setIsOpen0] = useState(false);
+  const [isOpen2, setIsOpen2] = useState(false);
+  const [isOpen1, setIsOpen1] = useState(false);
+  const [isOpen3, setIsOpen3] = useState(false);
+  const [isOpen4, setIsOpen4] = useState(false);
+
+  let quiz = nav === "Quiz" ? true : false;
+  let stats = nav === "Stats" ? true : false;
+  let wait = false;
+
+  const [myInfo, setmyInfo] = useState("1");
+  const [topUMC, settopUMC] = useState();
+  const [topUHP, settopUHP] = useState();
+  const [topQMC, settopQMC] = useState();
+  const [topQHP, settopQHP] = useState();
+
+  async function getStats() {
+    const uid = localStorage.getItem("Id");
+
+    // GET(URL("hints/U"));
+    // GET(URL("hints/Q"));
+    if (user)
+      GET(URL(`answers/${uid}`)).then((response) => {
+        let string;
+        const list = response[0];
+        const obj = list[0];
+        string = (
+          <>
+            <div>
+              ID: {obj.Id}
+              <br></br>
+              Name: {obj.name}
+              <br></br>
+              Email: {obj.email}
+              <br></br>
+              Questions answered: {obj.total_answers}
+              <br></br>
+              Correct answers: {obj.correct_answers}
+              <br></br>
+              Your Accuracy: {obj.accuracy_percentage}%<br></br>
+            </div>
+          </>
+        );
+        setmyInfo(string);
+      });
+    GET(URL("questions/m/c")).then((response) => {
+      const list = response[0];
+      let map = list.map((i) => (
+        <>
+          <br></br>
+          Question #: {i.Q_id}
+          <br></br>
+          Correct Answers Count: {i.correct_answers_count}
+          <br></br>
+        </>
+      ));
+
+      settopQMC(map);
+    });
+    GET(URL("questions/h/p")).then((response) => {
+      const list = response[0];
+      let map = list.map((i) => (
+        <>
+          <br></br>
+          Question #: {i.Q_id}
+          <br></br>
+          Total Answers: {i.total_users}
+          <br></br>
+          Average Accuracy: {i.correct_percentage}%<br></br>
+        </>
+      ));
+
+      settopQHP(map);
+    });
+    GET(URL("users/m/c")).then((response) => {
+      const list = response[0];
+      let map = list.map((i) => (
+        <>
+          <br></br>
+          User: {i.Id}
+          <br></br>
+          Name: {i.name}
+          <br></br>
+          Total Correct Answers: {i.correct_answer_count}
+          <br></br>
+        </>
+      ));
+
+      settopUMC(map);
+    });
+    GET(URL("users/h/p")).then((response) => {
+      const list = response[0];
+      let map = list.map((i) => (
+        <>
+          <br></br>
+          User: {i.Id}
+          <br></br>
+          Name: {i.name}
+          <br></br>
+          Total Answers: {i.total_questions_answered}
+          <br></br>
+          Average Accuracy: {i.correct_percentage}%<br></br>
+        </>
+      ));
+      settopUHP(map);
+    });
+  }
+
+  async function GetQuestion() {
+    const res = user
+      ? await GET(URL(`questions/${localStorage.getItem("Id")}`))
+      : await GET(URL("questions"));
+    const question = res[0];
+    document.getElementById("question").textContent = question[0].prompt;
+    let obj = question[0];
+    for (let i of "ABCDE") {
+      document.getElementById(i).textContent = obj[i];
+    }
+    localStorage.setItem("questionAnswer", obj.answer + "");
+    localStorage.setItem("qid", obj.Q_id + "");
+
+    wait = false;
+  }
+
+  function checkAnswer(answer) {
+    if (wait) return;
+    wait = true;
+    const qid = localStorage.getItem("qid");
+    const storedA = localStorage.getItem("questionAnswer");
+    const correct = answer === storedA;
+    const answerClass = correct ? "correct" : "incorrect";
+    document.getElementById(answer).classList.add(answerClass);
+    document.getElementById(storedA).classList.add("correct");
+    setTimeout(() => {
+      document.getElementById(answer).classList.remove(answerClass);
+      document.getElementById(storedA).classList.remove("correct");
+      getNewQuestion();
+    }, 3000);
+    if (user) {
+      POST(URL("answers/user"), {
+        Q_id: qid,
+        Id: localStorage.getItem("Id"),
+        Answer: answer,
+      }).then((ress) => console.log(ress));
+    } else {
+      POST(URL("answers"), { Q_id: qid, Answer: answer }).then((ress) =>
+        console.log(ress)
+      );
+    }
+  }
+
+  async function getNewQuestion() {
+    GetQuestion();
+  }
+
+  async function newHint() {
+    if (wait) return;
+    wait = true;
+    const storedA = localStorage.getItem("questionAnswer");
+    const uid = localStorage.getItem("Id");
+    const qid = localStorage.getItem("qid");
+    await POST(URL(user ? `hints/${localStorage.getItem("Id")}` : "hints"), {
+      Q_id: qid,
+      Id: user ? uid : "",
+    });
+    document.getElementById(storedA).classList.add("correct");
+    setTimeout(() => {
+      document.getElementById(storedA).classList.remove("correct");
+      getNewQuestion();
+    }, 3000);
+  }
 
   return (
     <>
       <div className="App">
+        {quiz ? (
+          <div className="container">
+            <div id="loader" className="hidden"></div>
+            <div id="game" className="justify-center flex-column ">
+              <div id="hud">
+                <div id="hud-item">
+                  <motion.div
+                    className="btn logo"
+                    whileHover={{ scale: [null, 1.1, 1.1] }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    whileTap={{ scale: 0.8 }}
+                    onClick={() => setNav("Home")}
+                  >
+                    Home
+                  </motion.div>
+                </div>
+                <div id="hud-item">
+                  <motion.div
+                    className="btn logo"
+                    whileHover={{ scale: [null, 1.1, 1.1] }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    whileTap={{ scale: 0.8 }}
+                    onClick={() => newHint()}
+                  >
+                    Hint
+                  </motion.div>
+                </div>
+                <div id="hud-item">
+                  <motion.div
+                    className="btn logo"
+                    whileHover={{ scale: [null, 1.1, 1.1] }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    whileTap={{ scale: 0.8 }}
+                    onClick={() => getNewQuestion()}
+                  >
+                    Next
+                  </motion.div>
+                </div>
+              </div>
+              <h2 id="question"></h2>
+              <motion.div
+                className="choice-container logo"
+                whileHover={{ scale: [null, 1.05, 1.05] }}
+                transition={{ type: "spring", stiffness: 400, damping: 1 }}
+                whileTap={{ scale: 0.8 }}
+                onClick={() => checkAnswer("A")}
+              >
+                <p className="choice-prefix">A</p>
+                <p className="choice-text" data-number="1" id="A"></p>
+              </motion.div>
+              <motion.div
+                className="choice-container logo"
+                whileHover={{ scale: [null, 1.05, 1.05] }}
+                transition={{ type: "spring", stiffness: 400, damping: 1 }}
+                whileTap={{ scale: 0.8 }}
+                onClick={() => checkAnswer("B")}
+              >
+                <p className="choice-prefix">B</p>
+                <p className="choice-text" data-number="2" id="B"></p>
+              </motion.div>
+              <motion.div
+                className="choice-container logo"
+                whileHover={{ scale: [null, 1.05, 1.05] }}
+                transition={{ type: "spring", stiffness: 400, damping: 1 }}
+                whileTap={{ scale: 0.8 }}
+                onClick={() => checkAnswer("C")}
+              >
+                <p className="choice-prefix">C</p>
+                <p className="choice-text" data-number="3" id="C"></p>
+              </motion.div>
+              <motion.div
+                className="choice-container logo"
+                whileHover={{ scale: [null, 1.05, 1.05] }}
+                transition={{ type: "spring", stiffness: 400, damping: 1 }}
+                whileTap={{ scale: 0.8 }}
+                onClick={() => checkAnswer("D")}
+              >
+                <p className="choice-prefix">D</p>
+                <p className="choice-text" data-number="4" id="D"></p>
+              </motion.div>
+              <motion.div
+                className="choice-container logo"
+                whileHover={{ scale: [null, 1.05, 1.05] }}
+                transition={{ type: "spring", stiffness: 400, damping: 1 }}
+                whileTap={{ scale: 0.8 }}
+                onClick={() => checkAnswer("E")}
+              >
+                <p className="choice-prefix">E</p>
+                <p className="choice-text" data-number="5" id="E"></p>
+              </motion.div>
+            </div>
+          </div>
+        ) : stats ? (
+          <div className="container">
+            <motion.div
+              className="btn logo"
+              whileHover={{ scale: [null, 1.5, 1.4] }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              whileTap={{ scale: 0.8 }}
+              onClick={() => setNav("Home")}
+            >
+              Home
+            </motion.div>
+            <div id="highScores" className="flex-center flex-column">
+              {user ? (
+                <motion.div
+                  layout
+                  data-isOpen={isOpen0}
+                  initial={{ borderRadius: 30 }}
+                  className="parent logo"
+                  onClick={() => setIsOpen0(!isOpen0)}
+                  whileHover={{ scale: [null, 1.5, 1.4] }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  whileTap={{ scale: 0.8 }}
+                >
+                  {isOpen0 ? myInfo : "My Info!"}
+                </motion.div>
+              ) : (
+                <></>
+              )}
+              <motion.div
+                layout
+                data-isOpen={isOpen1}
+                initial={{ borderRadius: 30 }}
+                className="parent logo"
+                onClick={() => setIsOpen1(!isOpen1)}
+                whileHover={{ scale: [null, 1.5, 1.4] }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                whileTap={{ scale: 0.8 }}
+              >
+                {isOpen1 ? <>{topQMC}</> : "Top-Questions"}
+              </motion.div>
+              <motion.div
+                layout
+                data-isOpen={isOpen2}
+                initial={{ borderRadius: 30 }}
+                className="parent logo"
+                onClick={() => setIsOpen2(!isOpen2)}
+                whileHover={{ scale: [null, 1.5, 1.4] }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                whileTap={{ scale: 0.8 }}
+              >
+                {isOpen2 ? <>{topQHP}</> : "Top-Questions %"}
+              </motion.div>
+              <motion.div
+                layout
+                data-isOpen={isOpen3}
+                initial={{ borderRadius: 30 }}
+                className="parent logo"
+                onClick={() => setIsOpen3(!isOpen3)}
+                whileHover={{ scale: [null, 1.5, 1.4] }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                whileTap={{ scale: 0.8 }}
+              >
+                {isOpen3 ? <>{topUMC}</> : "Top-Users"}
+              </motion.div>
+              <motion.div
+                layout
+                data-isOpen={isOpen4}
+                initial={{ borderRadius: 30 }}
+                className="parent logo"
+                onClick={() => setIsOpen4(!isOpen4)}
+                whileHover={{ scale: [null, 1.5, 1.4] }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                whileTap={{ scale: 0.8 }}
+              >
+                {isOpen4 ? <>{topUHP}</> : "Top-Users %"}
+              </motion.div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="example-container">
+              {user ? "Logged in as: " + user.displayName : ""}
+            </div>
+            <div className="container">
+              <div id="home" className="flex-center flex-column">
+                <h4>By Brand & Chuks</h4>
+                <h2>Quick Ask</h2>
+                <motion.div
+                  className="btn logo"
+                  whileHover={{ scale: [null, 1.5, 1.4] }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  whileTap={{ scale: 0.8 }}
+                  onClick={() => {
+                    setNav("Quiz");
+                    GetQuestion(); // if logged in get ruq
+                  }}
+                >
+                  Quiz
+                </motion.div>
+                <motion.div
+                  className="btn logo"
+                  whileHover={{ scale: [null, 1.5, 1.4] }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  whileTap={{ scale: 0.8 }}
+                  onClick={() => {
+                    setNav("Stats");
+                    getStats();
+                  }}
+                >
+                  Stats
+                </motion.div>
+                <motion.div
+                  className="btn logo"
+                  whileHover={{ scale: [null, 1.5, 1.4] }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  whileTap={{ scale: 0.8 }}
+                  onClick={async () => {
+                    if (!user) {
+                      await sighInWithGoogle();
+                    } else {
+                      auth.signOut();
+                    }
+                  }}
+                >
+                  {user ? "Logout" : "Login"}
+                </motion.div>
+              </div>
+            </div>
+          </>
+        )}
         <div className="Chat">
           <button
             className="chat-btn logo"
@@ -73,19 +532,9 @@ function App() {
 }
 
 function SignIn() {
-  const sighInWithGoogle = async (user) => {
-    const provider = new GoogleAuthProvider();
-    provider.addScope("profile");
-    provider.addScope("email");
-    //await signInWithRedirect(auth, provider);
-    await signInWithPopup(auth, provider);
-  };
   return (
     <>
-      <button onClick={sighInWithGoogle} className="sign-in">
-        Sign in with Google
-      </button>
-      <p className="read-the-docs">SignIn to Join Chat</p>
+      <p className="read-the-docs">Login to Join Chat</p>
     </>
   );
 }
@@ -94,7 +543,7 @@ function SignOut() {
   const signOut = () => {
     auth.signOut();
   };
-  return auth.currentUser && <button onClick={signOut}>Sign Out</button>;
+  return auth.currentUser && <button onClick={signOut}>Logout</button>;
 }
 
 function ChatRoom() {
